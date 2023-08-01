@@ -2,7 +2,10 @@
 import { User, Lock } from "@element-plus/icons-vue";
 import { reactive, ref } from "vue";
 import {useRouter} from "vue-router";
-import {ElNotification} from "element-plus"
+import {ElNotification} from "element-plus";
+//引入获取时当前间的函数
+import {getTime} from "@/utils/time";
+
 //引入用户相关的小仓库
 import userUsersStore from "@/store/modules/user"
 let userStore = userUsersStore();
@@ -11,17 +14,21 @@ let $router = useRouter();
 //定义变量控制按钮加载效果
 let loading = ref(false);
 let loginForm = reactive({ username: "admin", password: "111111" });
+//获取el-form组件
+let loginForms = ref();
 
 const login = async ()=> {
+    //保证全部表单检验通过后再发请求
+    await loginForms.value.validate();
     loading.value = true;
     try {
-        await userStore.userLogin(loginForm);
+        // await userStore.userLogin(loginForm);
         //编程式导航数据跳转到展示数据首页
         $router.push('/');
         ElNotification({
           type: 'success',
           message: '欢迎回来',
-          title: "hi,下午好"
+          title: `hi,${getTime()}好`
         });
         //登录成功加载效果也消失
         loading.value = false;
@@ -35,22 +42,38 @@ const login = async ()=> {
     }
 }
 
-//封装一个函数：获取一个时间段返回结果
-const getTime = ()=> { 
-  let message = "";
-  // 通过内置构造函数Date
-  let hours = new Date().getHours();
-  if(hours <= 9) {
-    message = "早上";
-  } else if(hours <= 12) {
-    message = "上午";
-  } else if(hours <= 18) {
-    message = "下午";
+//自定义校验规则函数
+const validatorUserName = (rule: any, value: any, callback: any)=> {
+  //rule:即为校验规则对象
+  //value: 即为表单元素文本内容
+  if(/^\d{5, 10}$/.test(value)){
+    callback();
   } else {
-    message = "晚上";
+    callback(new Error("账号长度至少五位"));
   }
-};
-getTime();
+}
+
+const validatorPassword = (rule: any, value: any, callback: any)=> {
+ //rule:即为校验规则对象
+  //value: 即为表单元素文本内容
+  if(/^\d{6, 10}$/.test(value)){
+    callback();
+  } else {
+    callback(new Error("密码长度至少六位"));
+  }
+}
+//定义表单校验需要配置对象
+const rules = {
+  username: [
+    // {required: true, message: "用户名不能为空", trigger: "blur"},
+    // {required: true, min:6, max: 10, message: "账号长度至少六位", trigger: "change"}
+    {trigger: "change", validator: validatorUserName}
+  ],
+  password: [
+    // {required: true, min:8, max:20,  message: "密码长度至少为8位", trigger: "change"}
+    {trigger: "change", validator: validatorPassword}
+  ]
+}
 </script>
 
 <template>
@@ -58,23 +81,23 @@ getTime();
     <el-row class="login_form">
       <el-col :span="12" :xs="0"></el-col>
       <el-col :span="12" :xs="24">
-        <el-form>
+        <el-form class="login-form" :model="loginForm" :rules="rules" ref="loginForms">
           <h1>Hello</h1>
           <h2>world</h2>
-          <el-form-item>
+          <el-form-item prop="username">
             <el-input
               :prefix-icon="User"
               v-model="loginForm.username"
             ></el-input>
           </el-form-item>
-          <el-form-item>
+          <el-form-item prop="password">
             <el-input
               type="password"
               :prefix-icon="Lock"
               v-model="loginForm.password"
             ></el-input>
           </el-form-item>
-          <el-form-item>
+          <el-form-item >
             <el-button
               class="login_btn"
               type="primary"
