@@ -43,12 +43,13 @@ export const constantRoute = [
     },
     {
         path: "/acl",
-        component: () => import("@/views/layout/index.vue"),
+        component: () => import("@/layout/index.vue"),
         meta: {
             hidden: false,
             title: "权限管理",
             icon: "Lock"
         },
+        redirect: "/acl/user",
         children: [
             {
                 path: "/acl/user",
