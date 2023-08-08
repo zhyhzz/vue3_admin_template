@@ -25,4 +25,6 @@ app.use(globalComponent)
 //注册模板路由
 app.use(router)
 app.use(pinia)
+
+import './permission';
 app.mount('#app')
