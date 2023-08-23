@@ -31,7 +31,12 @@
               icon="Edit"
               @click="updateTrademark"
             ></el-button>
-            <el-button type="primary" size="small" icon="Delete"></el-button>
+            <el-popconfirm :title="`ru sure to delete${row.tmName}`">
+              <template #reference>
+                <el-button type="primary" size="small" icon="Delete" @confirm="removeTradeMark(row.id)"></el-button>    
+              </template>
+            </el-popconfirm>
+            
           </template>
         </el-table-column>
       </el-table>
@@ -46,8 +51,16 @@
         @size-change="sizeChange"
       />
     </el-card>
-    <el-dialog v-model="dialogFromVisible" :title="trademarkParams.id? '修改品牌': '添加品牌'">
-      <el-form style="width:80%" :model="trademarkParams" :rules="rules" ref="formRef">
+    <el-dialog
+      v-model="dialogFromVisible"
+      :title="trademarkParams.id ? '修改品牌' : '添加品牌'"
+    >
+      <el-form
+        style="width: 80%"
+        :model="trademarkParams"
+        :rules="rules"
+        ref="formRef"
+      >
         <el-form-item label="品牌名称" label-width="100px" prop="tmName">
           <el-input
             placeholder="请您输入品牌名称"
@@ -90,6 +103,7 @@ import { ref, onMounted, reactive, nextTick } from "vue";
 import {
   reqAddorUpdateTrademark,
   reqHasTrademark,
+  reqDeleteTrademark
 } from "@/api/product/trademark";
 import { Plus } from "@element-plus/icons-vue";
 import type { UploadProps } from "element-plus";
@@ -150,6 +164,27 @@ const getHasTrademark = async (pager = 1) => {
   }
   console.log(result);
 };
+
+const removeTradeMark = async(id: number) => {
+  let result = await reqDeleteTrademark(id);
+  if(result.code == 200) {
+    ElMessage( {
+      type: 'success',
+      message: "删除品牌成功"
+    })
+
+    //再次获取已有的品牌数据
+    getHasTrademark(
+      trademarkArr.value.length > 1? pageNo.value : pageNo.value - 1
+    ) 
+  } else {
+    ElMessage({
+      type: "error",
+      message: "删除品牌失败"
+    })
+  }
+}
+
 const sizeChange = () => {
   getHasTrademark();
 };
@@ -159,10 +194,10 @@ const addTrademark = () => {
   trademarkParams.id = 0;
   trademarkParams.tmName = "";
   trademarkParams.logoUrl = "";
-  nextTick(()=> {
+  nextTick(() => {
     formRef.value.clearValidate("tmName");
     formRef.value.clearValidate("logoUrl");
-  })
+  });
 };
 
 const cancel = () => {
@@ -181,10 +216,10 @@ const confirm = async () => {
     //弹出提示信息
     ElMessage({
       type: "success",
-      massage: trademarkParams.id ? "修改品牌成功":"添加品牌成功",
+      massage: trademarkParams.id ? "修改品牌成功" : "添加品牌成功",
     });
     //再次发请求获取已有全部
-    getHasTrademark(trademarkParams.id? pageNo.value : 1);
+    getHasTrademark(trademarkParams.id ? pageNo.value : 1);
   } else {
     ElMessage({
       type: "error",
@@ -193,17 +228,17 @@ const confirm = async () => {
   }
 };
 const updateTrademark = (row: TradeMark) => {
-    console.log(row);
-    //对话框显示
-    dialogFromVisible.value = true;
-    
-    //ES6语法合并对象
-    Object.assign(trademarkParams, row);
-    reqAddorUpdateTrademark(trademarkParams);
-    nextTick(()=> {
+  console.log(row);
+  //对话框显示
+  dialogFromVisible.value = true;
+
+  //ES6语法合并对象
+  Object.assign(trademarkParams, row);
+  reqAddorUpdateTrademark(trademarkParams);
+  nextTick(() => {
     formRef.value.clearValidate("tmName");
     formRef.value.clearValidate("logoUrl");
-  })
+  });
 };
 //组件挂载完毕钩子————发一次请求
 onMounted(() => {
@@ -211,33 +246,31 @@ onMounted(() => {
 });
 //分页器当前页码发生变化的时候会触发
 //品牌自定义校验规则方法
-const validatorTmName =(rule: any, value: any, callBack: any) => {
+const validatorTmName = (rule: any, value: any, callBack: any) => {
   //是当表单元素触发blur时候，会触发此方法
-  if(value.trim().length >= 2) {
+  if (value.trim().length >= 2) {
     callBack();
   } else {
     callBack(new Error("品牌名称位数大于等于两位"));
   }
-}
+};
 
-const validatorLogoUrl = (rule: any, value: any, callBack: any)=> {
-  if(value) {
+const validatorLogoUrl = (rule: any, value: any, callBack: any) => {
+  if (value) {
     callBack();
   } else {
     callBack(new Error("logo url不存在"));
   }
-}
+};
 //表单校验规则对象
 const rules = {
   tmName: [
     //required:这个字段务必校验
     //trigger:代表触发校验规则时机
-    { required: true, trigger: 'blur', validator: validatorTmName}
+    { required: true, trigger: "blur", validator: validatorTmName },
   ],
-  logoUrl: [
-    { required: true, trigger: 'blur', validator: validatorLogoUrl}
-  ]
-}
+  logoUrl: [{ required: true, trigger: "blur", validator: validatorLogoUrl }],
+};
 </script>
 
 <style scoped>
